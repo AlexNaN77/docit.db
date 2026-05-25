@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>doCit DB.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Montserrat:wght@900;800;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0D0D0D; --surface:#161616; --surface2:#1F1F1F; --surface3:#2A2A2A; --border:#2E2E2E;
+  --green:#1DB954; --green-dim:rgba(29,185,84,.15);
+  --yellow:#F5C518; --yellow-dim:rgba(245,197,24,.15);
+  --red:#FF4136; --red-dim:rgba(255,65,54,.15);
+  --blue:#00B4D8; --blue-dim:rgba(0,180,216,.15);
+  --orange:#FF6B35; --orange-dim:rgba(255,107,53,.15);
+  --purple:#B36AFF; --purple-dim:rgba(179,106,255,.15);
+  --pink:#FF4D8D; --pink-dim:rgba(255,77,141,.15);
+  --teal:#2EE5B0; --teal-dim:rgba(46,229,176,.15);
+  --gray:#555;
+  --text:#FFFFFF; --text-muted:#888; --text-dim:#555;
+  --shadow-green:4px 4px 0 var(--green);
+  --shadow-blue:4px 4px 0 var(--blue);
+  --shadow-yellow:4px 4px 0 var(--yellow);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden}
+h1,h2,h3{font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:-1px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:2px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.logo{font-size:1.8rem;font-family:'Montserrat',sans-serif;font-weight:900;letter-spacing:-2px;color:var(--text);display:inline-flex;align-items:center;gap:2px}
+.logo .lo-do{color:var(--text)}
+.logo .lo-cit{color:var(--blue)}
+.logo .lo-dot{color:var(--green)}
+.user-block{display:flex;align-items:center;gap:8px}
+.user-pill{background:var(--surface2);border:1.5px solid var(--border);padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all .2s}
+.user-pill:hover{border-color:var(--blue);color:var(--blue)}
+.user-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+
+/* TABS */
+.tabs-nav{background:var(--surface);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;position:sticky;top:62px;z-index:99;backdrop-filter:blur(12px);-webkit-overflow-scrolling:touch}
+.tab-btn{flex-shrink:0;background:transparent;border:none;color:var(--text-muted);font-family:'Montserrat',sans-serif;font-weight:800;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;padding:14px 18px;cursor:pointer;transition:all .2s;border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-btn .count-pill{background:var(--surface3);color:var(--text);font-size:.65rem;padding:1px 6px;border-radius:10px;font-weight:700}
+.tab-btn.active .count-pill{background:var(--blue);color:#000}
+
+/* LAYOUT */
+.app-container{max-width:1100px;margin:0 auto;padding:20px 16px 80px;display:flex;flex-direction:column;gap:24px}
+.tab-panel{display:none;animation:fadeIn .3s ease}
+.tab-panel.active{display:flex;flex-direction:column;gap:24px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.card{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:22px;position:relative}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.card-title{font-size:1.1rem;font-weight:900;letter-spacing:-.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+
+/* HERO BANNER (estilo qb pero doCit) */
+.dc-banner{position:relative;background:#0e1620;border:1.5px solid #122433;border-radius:18px;padding:0;overflow:hidden;isolation:isolate}
+.dc-banner::before{content:'';position:absolute;inset:-20px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><g fill='%2300B4D8'><path d='M55 20 h10 v15 h15 v10 h-15 v15 h-10 v-15 h-15 v-10 h15z'/><circle cx='90' cy='90' r='3' opacity='.5'/><circle cx='20' cy='80' r='2' opacity='.4'/><path d='M30 30 l4 0 l0 -4 l3 0 l0 4 l4 0 l0 3 l-4 0 l0 4 l-3 0 l0 -4 l-4 0z' opacity='.7'/></g></svg>");background-size:160px 160px;opacity:.07;animation:dcPan 180s linear infinite;z-index:0;pointer-events:none}
+@keyframes dcPan{from{background-position:0 0}to{background-position:640px 320px}}
+.dc-banner::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.4) 100%);pointer-events:none;z-index:0}
+.dc-grid{position:relative;display:grid;grid-template-columns:auto 1fr;gap:28px;padding:26px 24px;align-items:center;z-index:2}
+.dc-hero{display:flex;flex-direction:column;gap:10px}
+.dc-eyebrow{align-self:flex-start;background:var(--text);color:#000;font-family:'Montserrat',sans-serif;font-weight:900;font-size:.6rem;letter-spacing:2.5px;padding:3px 10px;transform:skewX(-12deg) rotate(-1deg);border:1.5px solid #000;box-shadow:3px 3px 0 var(--blue)}
+.dc-eyebrow span{display:inline-block;transform:skewX(12deg)}
+.dc-num-wrap{position:relative;display:inline-block;transform:rotate(-2deg);margin:4px 0}
+.dc-num,.dc-num-shadow{font-family:'Montserrat',sans-serif;font-weight:900;font-size:5rem;line-height:.85;letter-spacing:-4px;display:block}
+.dc-num{color:var(--blue);position:relative;z-index:2}
+.dc-num-shadow{color:#000;position:absolute;top:4px;left:4px;z-index:1;opacity:.85}
+.dc-sub-ticket{align-self:flex-start;background:#000;color:var(--text);font-family:'Montserrat',sans-serif;font-weight:800;font-size:.7rem;letter-spacing:1.5px;padding:5px 12px;transform:skewX(-12deg) rotate(1deg);border:1.5px solid var(--blue);box-shadow:3px 3px 0 var(--blue);text-transform:uppercase}
+.dc-sub-ticket span{display:inline-block;transform:skewX(12deg)}
+.dc-right{display:flex;flex-direction:column;gap:10px}
+.dc-stats-row{display:flex;gap:8px;flex-wrap:wrap}
+.dc-stat-ticket{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:2px;min-width:90px}
+.dc-stat-ticket .lbl{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.dc-stat-ticket .val{font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.3rem;letter-spacing:-1px;line-height:1}
+
+/* SPECIALTY CHIPS (filters) */
+.spec-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.spec-chip{background:var(--surface2);border:1.5px solid var(--border);color:var(--text-muted);padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.spec-chip:hover{color:var(--text);border-color:var(--surface3)}
+.spec-chip.active{background:var(--blue-dim);border-color:var(--blue);color:var(--blue)}
+.spec-chip .cnt{background:var(--surface3);font-size:.65rem;padding:1px 7px;border-radius:10px;font-weight:800}
+.spec-chip.active .cnt{background:var(--blue);color:#000}
+
+/* DOCTOR GRID */
+.docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.doc-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;animation:slideIn .3s cubic-bezier(.34,1.56,.64,1) forwards;transition:all .2s}
+.doc-card:hover{border-color:var(--surface3);transform:translateY(-2px)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.doc-photo{width:100%;aspect-ratio:4/3;background:var(--surface3);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;cursor:pointer}
+.doc-photo img{width:100%;height:100%;object-fit:cover}
+.doc-photo-placeholder{color:var(--text-dim);font-size:2.5rem}
+.spec-badge{position:absolute;top:8px;left:8px;font-size:.62rem;font-weight:800;padding:4px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px;border:1.5px solid;backdrop-filter:blur(6px);background:rgba(0,0,0,.55)}
+.uploader-badge{position:absolute;top:8px;right:8px;font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(0,0,0,.6);color:var(--text);border:1.5px solid var(--border);backdrop-filter:blur(6px)}
+.doc-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.doc-name{font-weight:700;font-size:1rem;line-height:1.2}
+.doc-meta{font-size:.72rem;color:var(--text-muted);display:flex;gap:8px;flex-wrap:wrap}
+.doc-meta span{display:inline-flex;align-items:center;gap:3px}
+.doc-addr{font-size:.78rem;color:var(--text);background:var(--bg);padding:8px 10px;border-radius:8px;line-height:1.4}
+.doc-price-row{display:flex;gap:6px;flex-wrap:wrap}
+.doc-price-chip{background:var(--bg);padding:4px 9px;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border)}
+.doc-price-chip strong{color:var(--green)}
+.doc-actions{display:flex;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border);flex-wrap:wrap}
+.doc-actions .btn{padding:7px 10px;font-size:.68rem;flex:1;justify-content:center}
+
+/* Specialty color tints */
+.s-medicina_general{--sc:var(--blue);background:var(--blue-dim);border-color:var(--blue);color:var(--blue)}
+.s-cardiologia    {--sc:var(--red);background:var(--red-dim);border-color:var(--red);color:var(--red)}
+.s-odontologia    {--sc:var(--teal);background:var(--teal-dim);border-color:var(--teal);color:var(--teal)}
+.s-ginecologia    {--sc:var(--pink);background:var(--pink-dim);border-color:var(--pink);color:var(--pink)}
+.s-psicologia     {--sc:var(--purple);background:var(--purple-dim);border-color:var(--purple);color:var(--purple)}
+.s-nutricion      {--sc:var(--green);background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.s-oftalmologia   {--sc:var(--yellow);background:var(--yellow-dim);border-color:var(--yellow);color:var(--yellow)}
+.s-traumatologia  {--sc:var(--orange);background:var(--orange-dim);border-color:var(--orange);color:var(--orange)}
+
+/* FORM INPUTS */
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600}
+.inp{background:var(--surface2);border:2px solid var(--border);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.95rem;font-weight:500;padding:10px 14px;border-radius:10px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,180,216,.15)}
+.inp::placeholder{color:var(--text-dim)}
+textarea.inp{resize:vertical;min-height:70px;font-family:inherit}
+select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* BTNS */
+.btn{font-family:'Montserrat',sans-serif;font-weight:800;font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;padding:11px 18px;border:2px solid transparent;border-radius:10px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:active{transform:translate(2px,2px)}
+.btn-primary{background:var(--blue);color:#000;border-color:var(--blue);box-shadow:var(--shadow-blue)}
+.btn-primary:hover{box-shadow:6px 6px 0 var(--blue)}
+.btn-primary:active{box-shadow:1px 1px 0 var(--blue)}
+.btn-green{background:var(--green);color:#000;border-color:var(--green);box-shadow:var(--shadow-green)}
+.btn-green:hover{box-shadow:6px 6px 0 var(--green)}
+.btn-yellow{background:var(--yellow);color:#000;border-color:var(--yellow);box-shadow:var(--shadow-yellow)}
+.btn-red{background:transparent;color:var(--red);border-color:var(--red);padding:8px 12px;font-size:.75rem}
+.btn-red:hover{background:var(--red-dim);box-shadow:3px 3px 0 var(--red)}
+.btn-ghost{background:transparent;color:var(--text-muted);border-color:var(--border)}
+.btn-ghost:hover{border-color:var(--text-muted);color:var(--text)}
+.btn-icon{padding:8px;min-width:36px;justify-content:center}
+.btn-full{width:100%;justify-content:center}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:32px;color:var(--text-dim);font-size:.85rem}
+.empty-state .empty-icon{font-size:2.5rem;margin-bottom:8px;display:block}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:500;padding:20px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:2px solid var(--border);border-radius:18px;padding:24px;max-width:600px;width:100%;max-height:calc(100vh - 40px);overflow-y:auto;animation:modalIn .3s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes modalIn{from{transform:scale(.9) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal-title{font-size:1.2rem;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;padding:4px;line-height:1;transition:color .2s}
+.modal-close:hover{color:var(--red)}
+.modal-form{display:flex;flex-direction:column;gap:14px}
+.modal-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.hidden-input{display:none}
+
+/* SERVICES sub-form */
+.services-builder{background:var(--surface2);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.service-row{display:grid;grid-template-columns:2fr 1fr auto;gap:6px;align-items:center}
+.service-pill{background:var(--bg);border:1px solid var(--border);padding:6px 10px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.8rem}
+.service-pill .sv-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.service-pill .sv-price{color:var(--green);font-weight:800;font-family:'Montserrat',sans-serif}
+.sv-remove{background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;padding:0 4px}
+
+/* PHOTO VIEWER */
+.photo-viewer{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;cursor:pointer}
+.photo-viewer.open{display:flex}
+.photo-viewer img{max-width:100%;max-height:100%;border-radius:12px}
+
+/* MAP PREVIEW */
+.map-mini{width:100%;aspect-ratio:16/9;background:var(--surface2);border-radius:10px;overflow:hidden;border:1.5px solid var(--border);position:relative}
+.map-mini iframe{width:100%;height:100%;border:0}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--surface);border:2px solid var(--blue);color:var(--text);padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:600;z-index:9999;transition:transform .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;align-items:center;gap:8px;max-width:calc(100vw - 40px)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* DANGER */
+.danger-zone{border:1.5px dashed var(--red);border-radius:12px;padding:16px;background:rgba(255,65,54,.03)}
+.danger-zone-title{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--red);font-weight:700;margin-bottom:12px}
+
+/* INFO ZONE */
+.info-zone{border:1.5px dashed var(--blue);border-radius:12px;padding:14px;background:rgba(0,180,216,.03);margin-bottom:14px}
+.info-zone p{font-size:.78rem;color:var(--text-muted);line-height:1.5}
+.info-zone strong{color:var(--text)}
+
+/* RESPONSIVE */
+@media (max-width:600px){
+  .header{padding:12px 16px}.logo{font-size:1.4rem}
+  .tabs-nav{top:60px}.tab-btn{padding:12px 14px;font-size:.7rem}
+  .app-container{padding:16px 12px 80px}
+  .card{padding:18px}
+  .docs-grid{grid-template-columns:1fr}
+  .modal-form-row{grid-template-columns:1fr}
+  .dc-grid{grid-template-columns:1fr;gap:18px;padding:22px 18px}
+  .dc-num,.dc-num-shadow{font-size:4rem}
+  .service-row{grid-template-columns:1fr;gap:6px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo"><span class="lo-do">do</span><span class="lo-cit">Cit</span><span class="lo-dot">.</span> <span style="font-family:'Space Grotesk';font-size:.7rem;color:var(--text-muted);font-weight:500;letter-spacing:0;margin-left:6px;text-transform:none;">DB</span></div>
+  <div class="user-block">
+    <div class="user-pill" id="user-pill" onclick="openUserModal()">
+      <span class="user-dot"></span>
+      <span id="user-name-display">Sin nombre</span>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs-nav">
+  <button class="tab-btn active" data-tab="doctores">🩺 Doctores <span class="count-pill" id="cnt-doctors">0</span></button>
+  <button class="tab-btn" data-tab="especialidades">🏥 Especialidades</button>
+  <button class="tab-btn" data-tab="export">📤 Exportar</button>
+  <button class="tab-btn" data-tab="datos">⚙️ Datos</button>
+</nav>
+
+<div class="app-container">
+
+  <!-- ============ TAB DOCTORES ============ -->
+  <div class="tab-panel active" id="panel-doctores">
+
+    <div class="dc-banner">
+      <div class="dc-grid">
+        <div class="dc-hero">
+          <div class="dc-eyebrow"><span>BASE DE DATOS</span></div>
+          <div class="dc-num-wrap">
+            <span class="dc-num-shadow" id="hero-num-shadow">0</span>
+            <span class="dc-num" id="hero-num">0</span>
+          </div>
+          <div class="dc-sub-ticket"><span>DOCTORES REGISTRADOS</span></div>
+        </div>
+        <div class="dc-right">
+          <div class="dc-stats-row" id="hero-stats"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🩺 Doctores</div>
+        <button class="btn btn-primary" onclick="openDoctorModal()">+ Agregar doctor</button>
+      </div>
+
+      <div class="info-zone">
+        <p>📌 <strong>Para el equipo:</strong> antes de subir, pon tu nombre en la esquina superior derecha. Así sabemos quién subió qué. Sube <strong>nombre, foto, dirección, costos/servicios y ubicación del consultorio</strong>. Si tienes link de Google Maps, pégalo en "Link de Google Maps" para que aparezca un mini mapa.</p>
+      </div>
+
+      <div class="spec-filters" id="spec-filters"></div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <input type="text" id="search-input" class="inp" placeholder="🔎 Buscar por nombre, dirección, especialidad..." style="flex:1;min-width:220px;" oninput="renderDoctors()">
+        <select class="inp" id="sort-select" style="max-width:200px;" onchange="renderDoctors()">
+          <option value="recent">⏱ Más recientes</option>
+          <option value="name">🔤 Nombre A-Z</option>
+          <option value="specialty">🏥 Por especialidad</option>
+          <option value="uploader">👤 Por quien subió</option>
+        </select>
+      </div>
+
+      <div class="docs-grid" id="docs-grid"></div>
+      <div class="empty-state" id="docs-empty">
+        <span class="empty-icon">🩺</span>
+        Sin doctores registrados. Dale a <strong>+ Agregar doctor</strong> para empezar.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB ESPECIALIDADES ============ -->
+  <div class="tab-panel" id="panel-especialidades">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">🏥 Conteo por especialidad</div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:16px;line-height:1.5;">
+        Ojo: ideal tener mínimo <strong style="color:var(--text)">3-5 doctores por especialidad</strong> para que la app se vea con contenido al lanzarla.
+      </p>
+      <div id="spec-summary" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">👤 Contribuciones del equipo</div>
+      <div id="uploader-summary" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB EXPORT ============ -->
+  <div class="tab-panel" id="panel-export">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">📤 Exportar datos</div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:16px;line-height:1.5;">
+        Exporta toda la info que han subido para meterla directo a la base de datos de Android Studio (SQLite, Room, Firebase, lo que ocupen).
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="exportJSON()">⬇️ Exportar JSON (completo)</button>
+        <button class="btn btn-green" onclick="exportCSV()">📊 Exportar CSV (Excel)</button>
+        <button class="btn btn-yellow" onclick="exportSQL()">🗄 Exportar SQL (SQLite)</button>
+      </div>
+      <p style="font-size:.7rem;color:var(--text-dim);margin-top:12px;line-height:1.5;">
+        💡 <strong>JSON</strong>: ideal para Firebase / Room con TypeConverters.<br>
+        💡 <strong>CSV</strong>: para abrir en Excel o Google Sheets.<br>
+        💡 <strong>SQL</strong>: queries INSERT directos para SQLite.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">⬆️ Importar respaldo</div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:16px;">
+        Importa un JSON exportado previamente. Esto REEMPLAZA los datos actuales.
+      </p>
+      <button class="btn btn-blue" onclick="document.getElementById('import-file').click()">⬆️ Importar JSON</button>
+      <input type="file" id="import-file" accept=".json" class="hidden-input" onchange="importJSON(event)">
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">🔗 Esquema sugerido para Android Studio</div>
+      <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:.75rem;color:var(--text);line-height:1.5;"><code>// Room Entity ejemplo (Kotlin)
+@Entity(tableName = "doctors")
+data class Doctor(
+    @PrimaryKey val id: String,
+    val name: String,
+    val specialty: String,    // "cardiologia", "odontologia"...
+    val photoUrl: String?,    // base64 o URL
+    val phone: String?,
+    val address: String,
+    val mapsUrl: String?,
+    val schedule: String?,
+    val services: String,     // JSON serializado de [{name, price}]
+    val notes: String?,
+    val uploadedBy: String,
+    val createdAt: Long
+)</code></pre>
+    </div>
+  </div>
+
+  <!-- ============ TAB DATOS ============ -->
+  <div class="tab-panel" id="panel-datos">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">💾 Almacenamiento</div>
+      <div id="storage-info" style="font-size:.85rem;color:var(--text-muted);"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">⚠️ Zona de peligro</div>
+      <div class="danger-zone">
+        <div class="danger-zone-title">⚠️ Acciones irreversibles</div>
+        <div class="btn-row">
+          <button class="btn btn-red" onclick="confirmClearAll()">💀 Borrar TODO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ====== MODAL: DOCTOR ====== -->
+<div class="modal-overlay" id="doctor-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="doc-modal-title">➕ Agregar doctor</span>
+      <button class="modal-close" onclick="closeDoctorModal()">✕</button>
+    </div>
+    <form class="modal-form" onsubmit="event.preventDefault();saveDoctor();">
+      <div>
+        <label style="font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;">Foto del doctor</label>
+        <div id="photo-preview" style="width:100%;aspect-ratio:4/3;max-height:200px;background:var(--surface2);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;" onclick="document.getElementById('photo-input').click()">
+          <span style="color:var(--text-dim);font-size:.85rem;">📷 Toca para agregar foto</span>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" class="hidden-input" onchange="handlePhoto(event)">
+        <button type="button" class="btn btn-ghost" id="btn-remove-photo" onclick="removePhoto()" style="margin-top:8px;display:none;">🗑 Quitar foto</button>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre completo *</label>
+        <input type="text" id="doc-name" class="inp" placeholder="Dr. Juan Pérez García" required>
+      </div>
+
+      <div class="modal-form-row">
+        <div class="form-group">
+          <label>Especialidad *</label>
+          <select id="doc-specialty" class="inp" required></select>
+        </div>
+        <div class="form-group">
+          <label>Cédula profesional</label>
+          <input type="text" id="doc-license" class="inp" placeholder="1234567">
+        </div>
+      </div>
+
+      <div class="modal-form-row">
+        <div class="form-group">
+          <label>Teléfono / WhatsApp</label>
+          <input type="tel" id="doc-phone" class="inp" placeholder="341 123 4567">
+        </div>
+        <div class="form-group">
+          <label>Correo</label>
+          <input type="email" id="doc-email" class="inp" placeholder="dr@correo.com">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Dirección completa del consultorio *</label>
+        <textarea id="doc-address" class="inp" placeholder="Av. Reforma 123, Col. Centro, Ciudad Guzmán, Jal. CP 49000" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Link de Google Maps (opcional)</label>
+        <input type="url" id="doc-maps" class="inp" placeholder="https://maps.google.com/...">
+        <p style="font-size:.65rem;color:var(--text-dim);margin-top:3px;">Si pegas un link de Google Maps, aparecerá un mini mapa en la ficha.</p>
+      </div>
+
+      <div class="form-group">
+        <label>Horario de atención</label>
+        <input type="text" id="doc-schedule" class="inp" placeholder="Lun-Vie 9:00-14:00 y 16:00-20:00, Sáb 9:00-13:00">
+      </div>
+
+      <div>
+        <label style="font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;display:block;margin-bottom:8px;">💰 Servicios y costos</label>
+        <div class="services-builder">
+          <div class="service-row">
+            <input type="text" id="sv-input-name" class="inp" placeholder="Ej: Consulta general">
+            <input type="number" id="sv-input-price" class="inp" placeholder="$ Precio">
+            <button type="button" class="btn btn-primary btn-icon" onclick="addService()">+</button>
+          </div>
+          <div id="services-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Notas adicionales</label>
+        <textarea id="doc-notes" class="inp" placeholder="Atiende sin cita, acepta seguros XYZ, habla inglés, etc."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-red" id="btn-delete-doc" onclick="deleteDoctor()" style="display:none;">🗑 Eliminar</button>
+        <button type="button" class="btn btn-ghost" onclick="closeDoctorModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ====== MODAL: USER ====== -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">
+      <span>👤 ¿Quién eres?</span>
+      <button class="modal-close" onclick="closeUserModal()">✕</button>
+    </div>
+    <form class="modal-form" onsubmit="event.preventDefault();saveUser();">
+      <p style="font-size:.8rem;color:var(--text-muted);line-height:1.5;">
+        Pon tu nombre para que el equipo sepa quién subió cada doctor. Se guarda solo en tu navegador.
+      </p>
+      <div class="form-group">
+        <label>Tu nombre</label>
+        <input type="text" id="user-input" class="inp" placeholder="Ej: Carlos, Ana, Luis..." required>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ====== MODAL: CONFIRM ====== -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">
+      <span id="confirm-title">¿Seguro?</span>
+      <button class="modal-close" onclick="closeConfirm()">✕</button>
+    </div>
+    <p id="confirm-msg" style="color:var(--text-muted);font-size:.9rem;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-red" id="confirm-ok-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="photo-viewer" id="photo-viewer" onclick="this.classList.remove('open')">
+  <img id="photo-viewer-img" src="">
+</div>
+
+<div class="toast" id="toast">
+  <span id="toast-icon">✅</span>
+  <span id="toast-text">Listo</span>
+</div>
+
+<script>
+/* ============================================================
+   CONSTANTES
+============================================================ */
+const STORAGE_KEY = 'docit_db_v1';
+const USER_KEY = 'docit_user';
+
+const SPECIALTIES = [
+  { id:'medicina_general', label:'Medicina General', icon:'🩺', cls:'s-medicina_general' },
+  { id:'cardiologia',      label:'Cardiología',       icon:'❤️', cls:'s-cardiologia' },
+  { id:'odontologia',      label:'Odontología',       icon:'🦷', cls:'s-odontologia' },
+  { id:'ginecologia',      label:'Ginecología',       icon:'🌸', cls:'s-ginecologia' },
+  { id:'psicologia',       label:'Psicología',        icon:'🧠', cls:'s-psicologia' },
+  { id:'nutricion',        label:'Nutrición',         icon:'🥗', cls:'s-nutricion' },
+  { id:'oftalmologia',     label:'Oftalmología',      icon:'👁', cls:'s-oftalmologia' },
+  { id:'traumatologia',    label:'Traumatología',     icon:'🦴', cls:'s-traumatologia' },
+];
+
+let data = { doctors: [] };
+let currentUser = '';
+let currentFilter = 'all';
+let editingId = null;
+let pendingPhoto = null;
+let pendingServices = [];
+
+/* ============================================================
+   STORAGE
+============================================================ */
+function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    updateStorageInfo();
+  }catch(e){
+    if(e.name==='QuotaExceededError'){
+      showToast('⚠️','Storage lleno. Exporta antes de seguir.');
+    }else{ console.error(e); }
+  }
+}
+function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){ try{ data = JSON.parse(raw); if(!data.doctors) data.doctors=[]; }catch(e){console.error(e);} }
+  currentUser = localStorage.getItem(USER_KEY) || '';
+}
+function updateStorageInfo(){
+  const el = document.getElementById('storage-info'); if(!el) return;
+  const raw = localStorage.getItem(STORAGE_KEY) || '';
+  const bytes = new Blob([raw]).size;
+  const kb = (bytes/1024).toFixed(1);
+  const mb = (bytes/1024/1024).toFixed(2);
+  const pct = ((bytes/(5*1024*1024))*100).toFixed(1);
+  el.innerHTML = `Usado: <strong style="color:var(--text)">${kb} KB</strong> (${mb} MB) — aprox <strong style="color:${pct>80?'var(--red)':'var(--green)'}">${pct}%</strong> del límite típico.<br><br>
+  Doctores: <strong>${data.doctors.length}</strong>`;
+}
+
+/* ============================================================
+   USER
+============================================================ */
+function openUserModal(){
+  document.getElementById('user-input').value = currentUser;
+  document.getElementById('user-modal').classList.add('open');
+}
+function closeUserModal(){ document.getElementById('user-modal').classList.remove('open'); }
+function saveUser(){
+  const name = document.getElementById('user-input').value.trim();
+  if(!name){ showToast('❌','Pon un nombre'); return; }
+  currentUser = name;
+  localStorage.setItem(USER_KEY, name);
+  document.getElementById('user-name-display').textContent = name;
+  closeUserModal();
+  showToast('👤',`Bienvenido ${name}`);
+}
+
+/* ============================================================
+   TABS
+============================================================ */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(name==='especialidades') renderSummary();
+  if(name==='datos') updateStorageInfo();
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+
+/* ============================================================
+   IMAGE COMPRESS
+============================================================ */
+function compressImage(file, maxSize=600, quality=.7){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = e=>{
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = ()=>{
+        let {width,height} = img;
+        if(width>height && width>maxSize){ height=Math.round(height*maxSize/width); width=maxSize; }
+        else if(height>maxSize){ width=Math.round(width*maxSize/height); height=maxSize; }
+        const canvas = document.createElement('canvas');
+        canvas.width=width; canvas.height=height;
+        canvas.getContext('2d').drawImage(img,0,0,width,height);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function handlePhoto(e){
+  const file = e.target.files[0]; if(!file) return;
+  showToast('⏳','Comprimiendo...');
+  try{
+    pendingPhoto = await compressImage(file,600,.7);
+    renderPhotoPreview();
+  }catch(err){ showToast('❌','Error con la imagen'); }
+}
+function renderPhotoPreview(){
+  const area = document.getElementById('photo-preview');
+  const btn = document.getElementById('btn-remove-photo');
+  if(pendingPhoto){
+    area.innerHTML = `<img src="${pendingPhoto}" style="width:100%;height:100%;object-fit:cover;">`;
+    btn.style.display = 'inline-flex';
+  }else{
+    area.innerHTML = '<span style="color:var(--text-dim);font-size:.85rem;">📷 Toca para agregar foto</span>';
+    btn.style.display = 'none';
+  }
+}
+function removePhoto(){
+  pendingPhoto = null;
+  document.getElementById('photo-input').value = '';
+  renderPhotoPreview();
+}
+
+/* ============================================================
+   SERVICES BUILDER
+============================================================ */
+function addService(){
+  const name = document.getElementById('sv-input-name').value.trim();
+  const price = parseFloat(document.getElementById('sv-input-price').value);
+  if(!name){ showToast('❌','Falta el nombre del servicio'); return; }
+  pendingServices.push({ name, price: isNaN(price)?0:price });
+  document.getElementById('sv-input-name').value = '';
+  document.getElementById('sv-input-price').value = '';
+  renderServices();
+}
+function removeService(idx){
+  pendingServices.splice(idx,1);
+  renderServices();
+}
+function renderServices(){
+  const list = document.getElementById('services-list');
+  if(pendingServices.length===0){ list.innerHTML = '<p style="font-size:.72rem;color:var(--text-dim);text-align:center;padding:8px;">Sin servicios agregados todavía</p>'; return; }
+  list.innerHTML = pendingServices.map((s,i)=>`
+    <div class="service-pill">
+      <span class="sv-name">${escapeHtml(s.name)}</span>
+      <span class="sv-price">$${s.price.toLocaleString('es-MX')}</span>
+      <button type="button" class="sv-remove" onclick="removeService(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   DOCTOR CRUD
+============================================================ */
+function openDoctorModal(id=null){
+  if(!currentUser){ openUserModal(); showToast('👤','Pon tu nombre primero'); return; }
+  editingId = id;
+  pendingPhoto = null;
+  pendingServices = [];
+
+  // populate specialty select
+  const sel = document.getElementById('doc-specialty');
+  sel.innerHTML = '<option value="">-- Selecciona --</option>' + SPECIALTIES.map(s=>`<option value="${s.id}">${s.icon} ${s.label}</option>`).join('');
+
+  const title = document.getElementById('doc-modal-title');
+  const delBtn = document.getElementById('btn-delete-doc');
+
+  if(id){
+    const d = data.doctors.find(x=>x.id===id); if(!d) return;
+    title.textContent = '✏️ Editar doctor';
+    document.getElementById('doc-name').value = d.name||'';
+    document.getElementById('doc-specialty').value = d.specialty||'';
+    document.getElementById('doc-license').value = d.license||'';
+    document.getElementById('doc-phone').value = d.phone||'';
+    document.getElementById('doc-email').value = d.email||'';
+    document.getElementById('doc-address').value = d.address||'';
+    document.getElementById('doc-maps').value = d.mapsUrl||'';
+    document.getElementById('doc-schedule').value = d.schedule||'';
+    document.getElementById('doc-notes').value = d.notes||'';
+    pendingPhoto = d.photo||null;
+    pendingServices = Array.isArray(d.services) ? [...d.services] : [];
+    delBtn.style.display = 'inline-flex';
+  }else{
+    title.textContent = '➕ Agregar doctor';
+    document.querySelector('#doctor-modal form').reset();
+    delBtn.style.display = 'none';
+  }
+  renderPhotoPreview();
+  renderServices();
+  document.getElementById('doctor-modal').classList.add('open');
+}
+function closeDoctorModal(){
+  document.getElementById('doctor-modal').classList.remove('open');
+  editingId = null; pendingPhoto = null; pendingServices = [];
+}
+function saveDoctor(){
+  const name = document.getElementById('doc-name').value.trim();
+  const specialty = document.getElementById('doc-specialty').value;
+  const address = document.getElementById('doc-address').value.trim();
+  if(!name||!specialty||!address){ showToast('❌','Faltan campos obligatorios'); return; }
+
+  const payload = {
+    name, specialty, address,
+    license: document.getElementById('doc-license').value.trim(),
+    phone: document.getElementById('doc-phone').value.trim(),
+    email: document.getElementById('doc-email').value.trim(),
+    mapsUrl: document.getElementById('doc-maps').value.trim(),
+    schedule: document.getElementById('doc-schedule').value.trim(),
+    notes: document.getElementById('doc-notes').value.trim(),
+    photo: pendingPhoto,
+    services: [...pendingServices],
+    uploadedBy: currentUser,
+  };
+
+  if(editingId){
+    const idx = data.doctors.findIndex(d=>d.id===editingId);
+    if(idx>=0){
+      data.doctors[idx] = { ...data.doctors[idx], ...payload, updatedAt: Date.now() };
+      showToast('✅','Doctor actualizado');
+    }
+  }else{
+    data.doctors.push({
+      id: 'd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+      ...payload,
+      createdAt: Date.now(),
+    });
+    showToast('✅',`${name} agregado`);
+  }
+  saveData();
+  renderDoctors();
+  renderHero();
+  closeDoctorModal();
+}
+function deleteDoctor(){
+  if(!editingId) return;
+  const d = data.doctors.find(x=>x.id===editingId); if(!d) return;
+  showConfirm(`¿Borrar ${d.name}?`,'No se puede deshacer.', ()=>{
+    data.doctors = data.doctors.filter(x=>x.id!==editingId);
+    saveData();
+    renderDoctors();
+    renderHero();
+    closeDoctorModal();
+    showToast('🗑','Doctor eliminado');
+  });
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function renderHero(){
+  const total = data.doctors.length;
+  document.getElementById('hero-num').textContent = total;
+  document.getElementById('hero-num-shadow').textContent = total;
+
+  const withPhoto = data.doctors.filter(d=>d.photo).length;
+  const withMaps = data.doctors.filter(d=>d.mapsUrl).length;
+  const specs = new Set(data.doctors.map(d=>d.specialty)).size;
+  const uploaders = new Set(data.doctors.map(d=>d.uploadedBy)).size;
+
+  document.getElementById('hero-stats').innerHTML = `
+    <div class="dc-stat-ticket"><div class="lbl">Especialidades</div><div class="val" style="color:var(--blue)">${specs}/8</div></div>
+    <div class="dc-stat-ticket"><div class="lbl">Con foto</div><div class="val" style="color:var(--green)">${withPhoto}</div></div>
+    <div class="dc-stat-ticket"><div class="lbl">Con mapa</div><div class="val" style="color:var(--yellow)">${withMaps}</div></div>
+    <div class="dc-stat-ticket"><div class="lbl">Equipo</div><div class="val" style="color:var(--purple)">${uploaders}</div></div>
+  `;
+}
+
+function renderSpecFilters(){
+  const cont = document.getElementById('spec-filters');
+  const counts = {};
+  data.doctors.forEach(d=>{ counts[d.specialty]=(counts[d.specialty]||0)+1; });
+  let html = `<div class="spec-chip ${currentFilter==='all'?'active':''}" onclick="setFilter('all')">Todos <span class="cnt">${data.doctors.length}</span></div>`;
+  SPECIALTIES.forEach(s=>{
+    const c = counts[s.id]||0;
+    html += `<div class="spec-chip ${currentFilter===s.id?'active':''}" onclick="setFilter('${s.id}')">${s.icon} ${s.label} <span class="cnt">${c}</span></div>`;
+  });
+  cont.innerHTML = html;
+}
+function setFilter(f){ currentFilter=f; renderSpecFilters(); renderDoctors(); }
+
+function renderDoctors(){
+  renderSpecFilters();
+  const grid = document.getElementById('docs-grid');
+  const empty = document.getElementById('docs-empty');
+  document.getElementById('cnt-doctors').textContent = data.doctors.length;
+
+  let list = [...data.doctors];
+  if(currentFilter!=='all') list = list.filter(d=>d.specialty===currentFilter);
+
+  const q = (document.getElementById('search-input')?.value||'').toLowerCase().trim();
+  if(q){
+    list = list.filter(d=>
+      (d.name||'').toLowerCase().includes(q) ||
+      (d.address||'').toLowerCase().includes(q) ||
+      (d.specialty||'').toLowerCase().includes(q) ||
+      (d.uploadedBy||'').toLowerCase().includes(q)
+    );
+  }
+
+  const sort = document.getElementById('sort-select')?.value || 'recent';
+  if(sort==='recent') list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(sort==='name') list.sort((a,b)=>a.name.localeCompare(b.name));
+  if(sort==='specialty') list.sort((a,b)=>a.specialty.localeCompare(b.specialty));
+  if(sort==='uploader') list.sort((a,b)=>(a.uploadedBy||'').localeCompare(b.uploadedBy||''));
+
+  if(list.length===0){
+    grid.innerHTML='';
+    empty.style.display='block';
+    empty.innerHTML = data.doctors.length===0
+      ? '<span class="empty-icon">🩺</span>Sin doctores registrados. Dale a <strong>+ Agregar doctor</strong>.'
+      : '<span class="empty-icon">🔍</span>Nada con esos filtros.';
+    return;
+  }
+  empty.style.display='none';
+
+  grid.innerHTML = list.map(d=>{
+    const spec = SPECIALTIES.find(s=>s.id===d.specialty) || {label:d.specialty,icon:'🩺',cls:''};
+    const services = Array.isArray(d.services)?d.services:[];
+    const priceChips = services.slice(0,3).map(sv=>
+      `<span class="doc-price-chip">${escapeHtml(sv.name)}: <strong>$${(sv.price||0).toLocaleString('es-MX')}</strong></span>`
+    ).join('');
+    const more = services.length>3 ? `<span class="doc-price-chip">+${services.length-3} más</span>` : '';
+
+    return `
+      <div class="doc-card">
+        <div class="doc-photo" onclick="${d.photo?`openPhotoViewer('${d.id}')`:`openDoctorModal('${d.id}')`}">
+          ${d.photo?`<img src="${d.photo}" alt="${escapeHtml(d.name)}">`:`<span class="doc-photo-placeholder">${spec.icon}</span>`}
+          <span class="spec-badge ${spec.cls}">${spec.icon} ${spec.label}</span>
+          ${d.uploadedBy?`<span class="uploader-badge">👤 ${escapeHtml(d.uploadedBy)}</span>`:''}
+        </div>
+        <div class="doc-body">
+          <div class="doc-name">${escapeHtml(d.name)}</div>
+          <div class="doc-meta">
+            ${d.phone?`<span>📱 ${escapeHtml(d.phone)}</span>`:''}
+            ${d.schedule?`<span>🕒 ${escapeHtml(d.schedule)}</span>`:''}
+          </div>
+          <div class="doc-addr">📍 ${escapeHtml(d.address)}</div>
+          ${d.mapsUrl?renderMapPreview(d.mapsUrl):''}
+          ${priceChips?`<div class="doc-price-row">${priceChips}${more}</div>`:''}
+          ${d.notes?`<div style="font-size:.74rem;color:var(--text-muted);font-style:italic;line-height:1.4;">💬 ${escapeHtml(d.notes)}</div>`:''}
+          <div class="doc-actions">
+            ${d.mapsUrl?`<a class="btn btn-primary" href="${d.mapsUrl}" target="_blank" rel="noopener">🗺 Maps</a>`:''}
+            <button class="btn btn-ghost" onclick="openDoctorModal('${d.id}')">✏️ Editar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMapPreview(url){
+  // Embed simple usando Google Maps (no requiere API key con el modo q=)
+  // Si pegan link tipo https://maps.app.goo.gl/... lo usamos como href; el embed lo simulamos con un link visual.
+  // Para mantener simplicidad: mostramos botón mapa en doc-actions, y un mini iframe solo si es link estándar de google maps embed.
+  // Para no romper con todos los formatos, omitimos iframe automático aquí.
+  return '';
+}
+
+function openPhotoViewer(id){
+  const d = data.doctors.find(x=>x.id===id); if(!d||!d.photo) return;
+  document.getElementById('photo-viewer-img').src = d.photo;
+  document.getElementById('photo-viewer').classList.add('open');
+}
+
+/* ============================================================
+   SUMMARY
+============================================================ */
+function renderSummary(){
+  const cont = document.getElementById('spec-summary');
+  const counts = {};
+  data.doctors.forEach(d=>{ counts[d.specialty]=(counts[d.specialty]||0)+1; });
+  const max = Math.max(...Object.values(counts),1);
+
+  cont.innerHTML = SPECIALTIES.map(s=>{
+    const c = counts[s.id]||0;
+    const pct = (c/max)*100;
+    const target = 5;
+    const status = c>=target ? '✅' : c>=3 ? '🟡' : c>0 ? '🟠' : '🔴';
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface2);border-radius:10px;border:1.5px solid var(--border);">
+        <span style="font-size:1.5rem;">${s.icon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:.9rem;">${s.label} ${status}</div>
+          <div style="height:6px;background:var(--surface3);border-radius:3px;margin-top:6px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:var(--blue);"></div>
+          </div>
+        </div>
+        <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.4rem;color:${c>=target?'var(--green)':c>0?'var(--yellow)':'var(--red)'};">${c}</div>
+      </div>
+    `;
+  }).join('');
+
+  const upCont = document.getElementById('uploader-summary');
+  const upCounts = {};
+  data.doctors.forEach(d=>{ const u = d.uploadedBy||'(sin nombre)'; upCounts[u]=(upCounts[u]||0)+1; });
+  const entries = Object.entries(upCounts).sort((a,b)=>b[1]-a[1]);
+  if(entries.length===0){
+    upCont.innerHTML = '<div class="empty-state"><span class="empty-icon">👤</span>Aún no hay registros.</div>';
+    return;
+  }
+  upCont.innerHTML = entries.map(([u,c],i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border:1.5px solid var(--border);">
+      <div style="width:28px;height:28px;background:${i===0?'var(--yellow)':'var(--surface3)'};color:${i===0?'#000':'var(--text)'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:900;font-size:.8rem;">${i+1}</div>
+      <div style="flex:1;font-weight:700;font-size:.9rem;">${escapeHtml(u)}</div>
+      <div style="font-family:'Montserrat',sans-serif;font-weight:900;color:var(--blue);">${c}</div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   EXPORT
+============================================================ */
+function exportJSON(){
+  const payload = { version:1, exportedAt:new Date().toISOString(), specialties:SPECIALTIES, doctors:data.doctors };
+  download(JSON.stringify(payload,null,2),`docit-db-${dateStr()}.json`,'application/json');
+  showToast('⬇️','JSON exportado');
+}
+function exportCSV(){
+  const headers = ['id','name','specialty','license','phone','email','address','mapsUrl','schedule','services','notes','uploadedBy','createdAt'];
+  const rows = [headers.join(',')];
+  data.doctors.forEach(d=>{
+    const row = headers.map(h=>{
+      let v = d[h];
+      if(h==='services') v = JSON.stringify(d.services||[]);
+      if(v==null) v='';
+      v = String(v).replace(/"/g,'""');
+      return `"${v}"`;
+    });
+    rows.push(row.join(','));
+  });
+  download(rows.join('\n'),`docit-db-${dateStr()}.csv`,'text/csv');
+  showToast('📊','CSV exportado');
+}
+function exportSQL(){
+  let sql = `-- doCit Database Export\n-- Generado: ${new Date().toISOString()}\n\n`;
+  sql += `CREATE TABLE IF NOT EXISTS doctors (\n`;
+  sql += `  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  specialty TEXT NOT NULL,\n  license TEXT,\n`;
+  sql += `  phone TEXT,\n  email TEXT,\n  address TEXT NOT NULL,\n  mapsUrl TEXT,\n  schedule TEXT,\n`;
+  sql += `  services TEXT,\n  notes TEXT,\n  photo TEXT,\n  uploadedBy TEXT,\n  createdAt INTEGER\n);\n\n`;
+  data.doctors.forEach(d=>{
+    const esc = v => v==null ? 'NULL' : `'${String(v).replace(/'/g,"''")}'`;
+    sql += `INSERT INTO doctors (id,name,specialty,license,phone,email,address,mapsUrl,schedule,services,notes,photo,uploadedBy,createdAt) VALUES (`;
+    sql += `${esc(d.id)},${esc(d.name)},${esc(d.specialty)},${esc(d.license)},${esc(d.phone)},${esc(d.email)},${esc(d.address)},${esc(d.mapsUrl)},${esc(d.schedule)},${esc(JSON.stringify(d.services||[]))},${esc(d.notes)},${esc(d.photo)},${esc(d.uploadedBy)},${d.createdAt||0});\n`;
+  });
+  download(sql,`docit-db-${dateStr()}.sql`,'text/plain');
+  showToast('🗄','SQL exportado');
+}
+function importJSON(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      const incoming = parsed.doctors || parsed.data?.doctors || parsed;
+      if(!Array.isArray(incoming)) throw new Error('Formato inválido');
+      showConfirm('¿Importar?',`Reemplaza tus ${data.doctors.length} doctores con ${incoming.length}.`, ()=>{
+        data.doctors = incoming;
+        saveData();
+        renderAll();
+        showToast('✅','Datos importados');
+      });
+    }catch(err){ showToast('❌','Archivo inválido'); console.error(err); }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+function download(content,filename,mime){
+  const blob = new Blob([content],{type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function dateStr(){ return new Date().toISOString().slice(0,10); }
+
+/* ============================================================
+   CONFIRM
+============================================================ */
+function showConfirm(t,m,cb){
+  document.getElementById('confirm-title').textContent=t;
+  document.getElementById('confirm-msg').textContent=m;
+  document.getElementById('confirm-modal').classList.add('open');
+  document.getElementById('confirm-ok-btn').onclick=()=>{cb();closeConfirm();};
+}
+function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); }
+function confirmClearAll(){
+  showConfirm('¿Borrar TODO?','Se eliminan todos los doctores. Exporta antes.', ()=>{
+    data = { doctors:[] };
+    saveData();
+    renderAll();
+    showToast('💀','Todo borrado');
+  });
+}
+
+/* ============================================================
+   TOAST + HELPERS
+============================================================ */
+let toastTimer = null;
+function showToast(icon,text){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-text').textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'),2800);
+}
+function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderAll(){
+  renderHero();
+  renderDoctors();
+  renderSummary();
+  updateStorageInfo();
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+window.addEventListener('DOMContentLoaded',()=>{
+  loadData();
+  if(currentUser) document.getElementById('user-name-display').textContent = currentUser;
+  renderAll();
+  if(!currentUser) setTimeout(()=>openUserModal(),400);
+});
+</script>
+</body>
+</html>
