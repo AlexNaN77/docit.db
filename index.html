@@ -209,12 +209,12 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
 </style>
 
 <script type="module">
-  // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  import {
+    getFirestore, collection, doc, setDoc, deleteDoc,
+    onSnapshot, getDocs, writeBatch
+  } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
-  // Your web app's Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyAL6-s7GobO8UFm2Zok7OSz56x1kJGVVVM",
     authDomain: "docit-db.firebaseapp.com",
@@ -224,14 +224,13 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
     appId: "1:271432875731:web:1f7c8e97f731ec3805de26"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Exponer al scope global para que el script de abajo lo use
   window._fb = { db, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, writeBatch };
   window.dispatchEvent(new Event('firebase-ready'));
 </script>
+
 
 </head>
 <body>
