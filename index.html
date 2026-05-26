@@ -207,6 +207,32 @@ select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+x
   .service-row{grid-template-columns:1fr;gap:6px}
 }
 </style>
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAL6-s7GobO8UFm2Zok7OSz56x1kJGVVVM",
+    authDomain: "docit-db.firebaseapp.com",
+    projectId: "docit-db",
+    storageBucket: "docit-db.firebasestorage.app",
+    messagingSenderId: "271432875731",
+    appId: "1:271432875731:web:1f7c8e97f731ec3805de26"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Exponer al scope global para que el script de abajo lo use
+  window._fb = { db, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, writeBatch };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
 </head>
 <body>
 
@@ -499,7 +525,6 @@ data class Doctor(
 /* ============================================================
    CONSTANTES
 ============================================================ */
-const STORAGE_KEY = 'docit_db_v1';
 const USER_KEY = 'docit_user';
 
 const SPECIALTIES = [
@@ -519,38 +544,46 @@ let currentFilter = 'all';
 let editingId = null;
 let pendingPhoto = null;
 let pendingServices = [];
+let fb = null;          // referencia a firebase
+let unsubscribe = null; // listener en tiempo real
 
 /* ============================================================
-   STORAGE
+   FIREBASE - LISTENER EN TIEMPO REAL
 ============================================================ */
-function saveData(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    updateStorageInfo();
-  }catch(e){
-    if(e.name==='QuotaExceededError'){
-      showToast('⚠️','Storage lleno. Exporta antes de seguir.');
-    }else{ console.error(e); }
-  }
+function startFirestoreSync(){
+  const { db, collection, onSnapshot } = fb;
+  const col = collection(db, 'doctors');
+  unsubscribe = onSnapshot(col, snap=>{
+    data.doctors = [];
+    snap.forEach(docSnap=>{
+      data.doctors.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    renderAll();
+  }, err=>{
+    console.error('Firestore error:',err);
+    showToast('❌','Error conectando a la nube');
+  });
 }
-function loadData(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(raw){ try{ data = JSON.parse(raw); if(!data.doctors) data.doctors=[]; }catch(e){console.error(e);} }
-  currentUser = localStorage.getItem(USER_KEY) || '';
+
+async function cloudSaveDoctor(docObj){
+  const { db, doc, setDoc, collection } = fb;
+  const ref = doc(collection(db,'doctors'), docObj.id);
+  await setDoc(ref, docObj);
 }
-function updateStorageInfo(){
-  const el = document.getElementById('storage-info'); if(!el) return;
-  const raw = localStorage.getItem(STORAGE_KEY) || '';
-  const bytes = new Blob([raw]).size;
-  const kb = (bytes/1024).toFixed(1);
-  const mb = (bytes/1024/1024).toFixed(2);
-  const pct = ((bytes/(5*1024*1024))*100).toFixed(1);
-  el.innerHTML = `Usado: <strong style="color:var(--text)">${kb} KB</strong> (${mb} MB) — aprox <strong style="color:${pct>80?'var(--red)':'var(--green)'}">${pct}%</strong> del límite típico.<br><br>
-  Doctores: <strong>${data.doctors.length}</strong>`;
+async function cloudDeleteDoctor(id){
+  const { db, doc, deleteDoc, collection } = fb;
+  await deleteDoc(doc(collection(db,'doctors'), id));
+}
+async function cloudClearAll(){
+  const { db, collection, getDocs, writeBatch } = fb;
+  const snap = await getDocs(collection(db,'doctors'));
+  const batch = writeBatch(db);
+  snap.forEach(d=>batch.delete(d.ref));
+  await batch.commit();
 }
 
 /* ============================================================
-   USER
+   USER (local, solo identifica quién sube)
 ============================================================ */
 function openUserModal(){
   document.getElementById('user-input').value = currentUser;
@@ -607,7 +640,8 @@ async function handlePhoto(e){
   const file = e.target.files[0]; if(!file) return;
   showToast('⏳','Comprimiendo...');
   try{
-    pendingPhoto = await compressImage(file,600,.7);
+    // Comprimimos MÁS porque Firestore tiene límite de 1MB por documento
+    pendingPhoto = await compressImage(file, 500, .6);
     renderPhotoPreview();
   }catch(err){ showToast('❌','Error con la imagen'); }
 }
@@ -665,7 +699,6 @@ function openDoctorModal(id=null){
   pendingPhoto = null;
   pendingServices = [];
 
-  // populate specialty select
   const sel = document.getElementById('doc-specialty');
   sel.innerHTML = '<option value="">-- Selecciona --</option>' + SPECIALTIES.map(s=>`<option value="${s.id}">${s.icon} ${s.label}</option>`).join('');
 
@@ -700,11 +733,20 @@ function closeDoctorModal(){
   document.getElementById('doctor-modal').classList.remove('open');
   editingId = null; pendingPhoto = null; pendingServices = [];
 }
-function saveDoctor(){
+
+async function saveDoctor(){
   const name = document.getElementById('doc-name').value.trim();
   const specialty = document.getElementById('doc-specialty').value;
   const address = document.getElementById('doc-address').value.trim();
   if(!name||!specialty||!address){ showToast('❌','Faltan campos obligatorios'); return; }
+
+  // Anti-duplicados: si ya existe alguien con el mismo nombre (case insensitive), avisamos
+  const dup = data.doctors.find(d =>
+    d.name.trim().toLowerCase() === name.toLowerCase() && d.id !== editingId
+  );
+  if(dup){
+    if(!confirm(`⚠️ Ya existe un doctor llamado "${dup.name}" subido por ${dup.uploadedBy||'?'}.\n\n¿Aun así quieres guardarlo?`)) return;
+  }
 
   const payload = {
     name, specialty, address,
@@ -714,40 +756,39 @@ function saveDoctor(){
     mapsUrl: document.getElementById('doc-maps').value.trim(),
     schedule: document.getElementById('doc-schedule').value.trim(),
     notes: document.getElementById('doc-notes').value.trim(),
-    photo: pendingPhoto,
+    photo: pendingPhoto || null,
     services: [...pendingServices],
     uploadedBy: currentUser,
   };
 
-  if(editingId){
-    const idx = data.doctors.findIndex(d=>d.id===editingId);
-    if(idx>=0){
-      data.doctors[idx] = { ...data.doctors[idx], ...payload, updatedAt: Date.now() };
+  try{
+    if(editingId){
+      const existing = data.doctors.find(x=>x.id===editingId) || {};
+      const updated = { ...existing, ...payload, id: editingId, updatedAt: Date.now() };
+      await cloudSaveDoctor(updated);
       showToast('✅','Doctor actualizado');
+    }else{
+      const id = 'd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+      const newDoc = { id, ...payload, createdAt: Date.now() };
+      await cloudSaveDoctor(newDoc);
+      showToast('✅',`${name} agregado en la nube`);
     }
-  }else{
-    data.doctors.push({
-      id: 'd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
-      ...payload,
-      createdAt: Date.now(),
-    });
-    showToast('✅',`${name} agregado`);
+    closeDoctorModal();
+  }catch(err){
+    console.error(err);
+    showToast('❌','No se pudo guardar (revisa internet/config)');
   }
-  saveData();
-  renderDoctors();
-  renderHero();
-  closeDoctorModal();
 }
-function deleteDoctor(){
+
+async function deleteDoctor(){
   if(!editingId) return;
   const d = data.doctors.find(x=>x.id===editingId); if(!d) return;
-  showConfirm(`¿Borrar ${d.name}?`,'No se puede deshacer.', ()=>{
-    data.doctors = data.doctors.filter(x=>x.id!==editingId);
-    saveData();
-    renderDoctors();
-    renderHero();
-    closeDoctorModal();
-    showToast('🗑','Doctor eliminado');
+  showConfirm(`¿Borrar ${d.name}?`,'No se puede deshacer.', async ()=>{
+    try{
+      await cloudDeleteDoctor(editingId);
+      closeDoctorModal();
+      showToast('🗑','Doctor eliminado');
+    }catch(err){ showToast('❌','No se pudo eliminar'); }
   });
 }
 
@@ -842,7 +883,6 @@ function renderDoctors(){
             ${d.schedule?`<span>🕒 ${escapeHtml(d.schedule)}</span>`:''}
           </div>
           <div class="doc-addr">📍 ${escapeHtml(d.address)}</div>
-          ${d.mapsUrl?renderMapPreview(d.mapsUrl):''}
           ${priceChips?`<div class="doc-price-row">${priceChips}${more}</div>`:''}
           ${d.notes?`<div style="font-size:.74rem;color:var(--text-muted);font-style:italic;line-height:1.4;">💬 ${escapeHtml(d.notes)}</div>`:''}
           <div class="doc-actions">
@@ -853,14 +893,6 @@ function renderDoctors(){
       </div>
     `;
   }).join('');
-}
-
-function renderMapPreview(url){
-  // Embed simple usando Google Maps (no requiere API key con el modo q=)
-  // Si pegan link tipo https://maps.app.goo.gl/... lo usamos como href; el embed lo simulamos con un link visual.
-  // Para mantener simplicidad: mostramos botón mapa en doc-actions, y un mini iframe solo si es link estándar de google maps embed.
-  // Para no romper con todos los formatos, omitimos iframe automático aquí.
-  return '';
 }
 
 function openPhotoViewer(id){
@@ -914,6 +946,15 @@ function renderSummary(){
   `).join('');
 }
 
+function updateStorageInfo(){
+  const el = document.getElementById('storage-info'); if(!el) return;
+  el.innerHTML = `
+    <strong style="color:var(--green)">☁️ Conectado a Firebase Firestore</strong><br>
+    Doctores en la nube: <strong>${data.doctors.length}</strong><br>
+    Todos los cambios se sincronizan en tiempo real entre todo el equipo.
+  `;
+}
+
 /* ============================================================
    EXPORT
 ============================================================ */
@@ -952,7 +993,7 @@ function exportSQL(){
   download(sql,`docit-db-${dateStr()}.sql`,'text/plain');
   showToast('🗄','SQL exportado');
 }
-function importJSON(e){
+async function importJSON(e){
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
   reader.onload = ev=>{
@@ -960,11 +1001,14 @@ function importJSON(e){
       const parsed = JSON.parse(ev.target.result);
       const incoming = parsed.doctors || parsed.data?.doctors || parsed;
       if(!Array.isArray(incoming)) throw new Error('Formato inválido');
-      showConfirm('¿Importar?',`Reemplaza tus ${data.doctors.length} doctores con ${incoming.length}.`, ()=>{
-        data.doctors = incoming;
-        saveData();
-        renderAll();
-        showToast('✅','Datos importados');
+      showConfirm('¿Importar a la nube?',`Se SUBIRÁN ${incoming.length} doctores a Firestore.`, async ()=>{
+        try{
+          for(const d of incoming){
+            if(!d.id) d.id = 'd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+            await cloudSaveDoctor(d);
+          }
+          showToast('✅','Datos importados a la nube');
+        }catch(err){ console.error(err); showToast('❌','Error al importar'); }
       });
     }catch(err){ showToast('❌','Archivo inválido'); console.error(err); }
     e.target.value='';
@@ -992,11 +1036,11 @@ function showConfirm(t,m,cb){
 }
 function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); }
 function confirmClearAll(){
-  showConfirm('¿Borrar TODO?','Se eliminan todos los doctores. Exporta antes.', ()=>{
-    data = { doctors:[] };
-    saveData();
-    renderAll();
-    showToast('💀','Todo borrado');
+  showConfirm('¿Borrar TODO de la nube?','Se eliminan TODOS los doctores para TODO el equipo. Exporta antes.', async ()=>{
+    try{
+      await cloudClearAll();
+      showToast('💀','Todo borrado de la nube');
+    }catch(err){ showToast('❌','Error al borrar'); }
   });
 }
 
@@ -1024,12 +1068,21 @@ function renderAll(){
 /* ============================================================
    INIT
 ============================================================ */
-window.addEventListener('DOMContentLoaded',()=>{
-  loadData();
+function init(){
+  currentUser = localStorage.getItem(USER_KEY) || '';
   if(currentUser) document.getElementById('user-name-display').textContent = currentUser;
-  renderAll();
+  fb = window._fb;
+  if(!fb){
+    showToast('❌','Firebase no cargó (revisa tu config)');
+    return;
+  }
+  startFirestoreSync();
   if(!currentUser) setTimeout(()=>openUserModal(),400);
-});
+}
+
+if(window._fb){ init(); }
+else { window.addEventListener('firebase-ready', init); }
 </script>
+
 </body>
 </html>
